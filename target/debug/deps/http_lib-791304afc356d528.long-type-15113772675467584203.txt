@@ -1,0 +1,1 @@
+&HashMap<std::string::String, for<'a> fn(&'a request::Request) -> Result<Pin<Box<(dyn Future<Output = response::Response> + Send + 'static)>>, Box<(dyn StdError + Send + 'static)>>>
