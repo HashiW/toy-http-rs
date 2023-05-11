@@ -1,13 +1,13 @@
-# Toy-HTTP: A Modern, Lightweight HTTP Learning Tool in Rust
+# Toy-HTTP-rs: A Modern, Lightweight HTTP Learning Tool in Rust
 
 ![Rust](https://github.com/user/toy-http/workflows/Rust/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-Welcome to `toy-http`! This is a hands-on, educational project designed to provide an accessible, practical introduction to the workings of the HTTP protocol, leveraging the power and safety of Rust. 
+Welcome to `toy-http-rs`! This is a hands-on, educational project designed to provide an accessible, practical introduction to the workings of the HTTP protocol, leveraging the power and safety of Rust. 
 
 ## Introduction
 
-With `toy-http`, we aim to demystify the intricacies of HTTP and provide a solid foundation for anyone looking to delve deeper into web development or networking. The project maintains a clean, modern codebase that is easy to navigate and understand.
+With `toy-http-rs`, we aim to demystify the intricacies of HTTP and provide a solid foundation for anyone looking to delve deeper into web development or networking. The project maintains a clean, modern codebase that is easy to navigate and understand.
 
 ## Features
 
