@@ -1,0 +1,1 @@
+for<'a> fn(&'a http_lib::request::Request) -> impl Future<Output = Result<Pin<Box<(dyn Future<Output = http_lib::response::Response> + Send + 'static)>>, Box<(dyn std::error::Error + Send + 'static)>>> {hello_handler}

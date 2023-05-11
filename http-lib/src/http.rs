@@ -1,8 +1,7 @@
-
 use serde::{Deserialize, Serialize};
 
 use std::fmt;
-#[derive(Debug,Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default,PartialEq,Eq, Hash)]
 pub enum HttpMethod {
     #[default]
     GET,
@@ -17,10 +16,11 @@ pub enum HttpMethod {
     OTHER(String),
 }
 
-#[derive(Debug,Clone, Copy,Default)]
+#[derive(Debug, Clone, Copy, Default,PartialEq)]
+#[repr(u16)]
 pub enum HttpStatusCode {
     #[default]
-    Ok = 200,
+    Success = 200,
     BadRequest = 400,
     Unauthorized = 401,
     Forbidden = 403,
@@ -34,41 +34,49 @@ pub enum HttpStatusCode {
     ServiceUnavailable = 503,
 }
 
-
-
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum HttpError {
-    BadRequest(HttpStatusCode),
-    Unauthorized(HttpStatusCode),
-    Forbidden(HttpStatusCode),
-    NotFound(HttpStatusCode),
-    MethodNotAllowed(HttpStatusCode),
-    NotAcceptable(HttpStatusCode),
-    Conflict(HttpStatusCode),
-    InternalServerError(HttpStatusCode),
-    NotImplemented(HttpStatusCode),
-    BadGateway(HttpStatusCode),
-    ServiceUnavailable(HttpStatusCode),
+    BadRequest(HttpStatusCode,&'static str),
+    Unauthorized(HttpStatusCode,&'static str),
+    Forbidden(HttpStatusCode,&'static str),
+    NotFound(HttpStatusCode,&'static str),
+    MethodNotAllowed(HttpStatusCode,&'static str),
+    NotAcceptable(HttpStatusCode,&'static str),
+    Conflict(HttpStatusCode,&'static str),
+    InternalServerError(HttpStatusCode,&'static str),
+    NotImplemented(HttpStatusCode,&'static str),
+    BadGateway(HttpStatusCode,&'static str),
+    ServiceUnavailable(HttpStatusCode,&'static str),
 }
 
 impl fmt::Display for HttpError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            HttpError::BadRequest(ErrCode) => write!(f, "Error {}: Bad Request", *ErrCode as u16),
-            HttpError::Unauthorized(ErrCode) => write!(f, "Error {}: Unauthorized", *ErrCode as u16),
-            HttpError::Forbidden(ErrCode) => write!(f, "Error {}: Forbidden", *ErrCode as u16),
-            HttpError::NotFound(ErrCode) => write!(f, "Error {}: Not Found", *ErrCode as u16),
-            HttpError::MethodNotAllowed(ErrCode) => write!(f, "Error {}: Method Not Allowed", *ErrCode as u16),
-            HttpError::NotAcceptable(ErrCode) => write!(f, "Error {}: Not Acceptable", *ErrCode as u16),
-            HttpError::Conflict(ErrCode) => write!(f, "Error {}: Conflict", *ErrCode as u16),
-            HttpError::InternalServerError(ErrCode) => write!(f, "Error {}: Internal Server Error", *ErrCode as u16),
-            HttpError::NotImplemented(ErrCode) => write!(f, "Error {}: Not Implemented", *ErrCode as u16),
-            HttpError::BadGateway(ErrCode) => write!(f, "Error {}: Bad Gateway", *ErrCode as u16),
-            HttpError::ServiceUnavailable(ErrCode) => write!(f, "Error {}: Service Unavailable", *ErrCode as u16),
+            HttpError::BadRequest(err_code,msg) => write!(f, "Error {}: Bad Request {}", *err_code as u16,msg),
+            HttpError::Unauthorized(err_code,msg) => {
+                write!(f, "Error {}: Unauthorized {}", *err_code as u16, msg)
+            }
+            HttpError::Forbidden(err_code,msg) => write!(f, "Error {}: Forbidden {}", *err_code as u16,msg),
+            HttpError::NotFound(err_code,msg) => write!(f, "Error {}: Not Found {}", *err_code as u16,msg),
+            HttpError::MethodNotAllowed(err_code,msg) => {
+                write!(f, "Error {}: Method Not Allowed", *err_code as u16)
+            }
+            HttpError::NotAcceptable(err_code,msg) => {
+                write!(f, "Error {}: Not Acceptable {}", *err_code as u16,msg)
+            }
+            HttpError::Conflict(err_code,msg) => write!(f, "Error {}: Conflict", *err_code as u16),
+            HttpError::InternalServerError(err_code,msg) => {
+                write!(f, "Error {}: Internal Server Error {}", *err_code as u16,msg)
+            }
+            HttpError::NotImplemented(err_code,msg) => {
+                write!(f, "Error {}: Not Implemented {}", *err_code as u16,msg)
+            }
+            HttpError::BadGateway(err_code,msg) => write!(f, "Error {}: Bad Gateway", *err_code as u16),
+            HttpError::ServiceUnavailable(err_code,msg) => {
+                write!(f, "Error {}: Service Unavailable {}", *err_code as u16,msg)
+            }
         }
     }
 }
-
-
 
 impl std::error::Error for HttpError {}
