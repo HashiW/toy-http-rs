@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug,Default, Serialize, Deserialize,Clone)]
 pub struct Response {
     pub version: String,
     pub status_code: u16,

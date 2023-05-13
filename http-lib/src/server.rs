@@ -1,7 +1,12 @@
 use crate::request::Request;
 use crate::response::Response;
+use crate::middleware::middleware::Middleware;
+use crate::middleware::logger::LoggerMiddleware;
 
 use crate::http::*;
+
+
+use std::cell::RefCell;
 use httparse;
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -15,10 +20,12 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::mpsc::{channel, Sender};
 
-pub type FutureResponse =
-    Result<Pin<Box<dyn Future<Output = Response> + Send>>, Box<dyn std::error::Error + Send>>;
 
-pub type RouteHandler = fn(&Request) -> FutureResponse;
+pub type FutureResponse<'a> = Pin<Box<dyn Future<Output = Result<Response, HttpError>> + Send + 'a>>;
+
+pub type RouteHandler = fn(Request) -> FutureResponse<'static>;
+
+
 
 pub struct Server {
     address: SocketAddr,
@@ -39,16 +46,18 @@ impl Server {
             let (mut stream, _) = listener.accept().await?;
             let routes = self.routes.clone();
             tokio::spawn(async move {
-                // This should be a bufreader
                 let mut buffer = [0; 1024];
                 let _ = stream.read(&mut buffer).await.unwrap();
 
                 let request = parse_request(&buffer).unwrap();
-                let future_response = handle_route(&request, &routes).await;
 
-                match future_response {
-                    Ok(future) => {
-                        let response = future.await;
+            ;
+                let empty_middleware: &[Box<dyn Middleware>; 0] = &[];
+
+                let future_response = handle_route(request, &routes,empty_middleware).await;
+
+                match future_response.await {
+                    Ok(response) => {
 
                         let response_string = format!(
                             "HTTP/1.1 {} {}\r\n{}\r\n\r\n{}",
@@ -109,7 +118,7 @@ fn parse_request(buffer: &[u8]) -> Result<Request, Box<dyn std::error::Error>> {
         None
     };
     
-    
+
     Ok(Request {
         method,
         uri,
@@ -119,16 +128,29 @@ fn parse_request(buffer: &[u8]) -> Result<Request, Box<dyn std::error::Error>> {
     })
 }
 
-async fn handle_route(request: &Request, routes: &HashMap<Route, RouteHandler>) -> FutureResponse {
+async fn handle_route<'a>(request:Request, routes: &'a HashMap<Route, RouteHandler>, middleware: &'a [Box<dyn Middleware>],) -> FutureResponse<'a>{
     // Find the route handler based on the request path and call it
     if let Some(handler) = routes.get(&Route { method: request.method.clone(), path: request.uri.clone() }) {
+        
+       
+
+        for mw in middleware {
+             
+           mw.on_request(request.clone()).await;
+        
+        }
+
         handler(request)
     } else {
-        
-        Err(Box::new(HttpError::InternalServerError(
-            HttpStatusCode::InternalServerError,
-            "Internal Server Error"
-        )))
+        Box::pin(async move {
+           
+            Err(HttpError::InternalServerError(
+                HttpStatusCode::InternalServerError,
+                "Internal Server Error"
+            ))
+          
+        })
+       
     }
 }
 

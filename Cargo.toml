@@ -4,3 +4,6 @@ members = [
     "http-lib",
     "http-core"
 ]
+
+[toolchain]
+channel = "nightly"

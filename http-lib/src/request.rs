@@ -5,7 +5,7 @@ use crate::http::HttpMethod;
 
 
 use serde::{Deserialize, Serialize};
-#[derive(Debug,Serialize, Deserialize)]
+#[derive(Debug,Clone,Serialize, Deserialize)]
 pub struct Request {
     pub method: HttpMethod,
     pub uri: String,

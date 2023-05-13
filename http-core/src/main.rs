@@ -14,7 +14,7 @@ use http_lib::response::*;
 
 use http_lib::server::*;
 
-fn hello_handler(_req: &Request) -> FutureResponse {
+fn hello_handler(_req: Request) -> FutureResponse<'static> {
     let html = "<html><body><h1>Hello, world!</h1></body></html>";
     let response = Response {
         version: "HTTP/1.1".to_string(),
@@ -27,38 +27,7 @@ fn hello_handler(_req: &Request) -> FutureResponse {
         },
         body: Some(html.to_string()),
     };
-    Ok(Box::pin(async move { response }))
-}
-fn not_found_handler(_req: &Request) -> FutureResponse {
-    let html = "<html><body><h1>Hello, world!</h1></body></html>";
-    let response = Response {
-        version: "HTTP/1.1".to_string(),
-        status_code: 200,
-        status_text: "OK".to_string(),
-        headers: {
-            let mut headers = HashMap::new();
-            headers.insert("Content-Type".to_string(), "text/html".to_string());
-            headers
-        },
-        body: Some(html.to_string()),
-    };
-    Ok(Box::pin(async move { response }))
-}
-
-fn hello_post_handler(_req: &Request) -> FutureResponse {
-    let html = "<html><body><h1>POSTER!</h1></body></html>";
-    let response = Response {
-        version: "HTTP/1.1".to_string(),
-        status_code: 200,
-        status_text: "OK".to_string(),
-        headers: {
-            let mut headers = HashMap::new();
-            headers.insert("Content-Type".to_string(), "text/html".to_string());
-            headers
-        },
-        body: Some(html.to_string()),
-    };
-    Ok(Box::pin(async move { response }))
+    Box::pin(async move { Ok(response) })
 }
 
 
