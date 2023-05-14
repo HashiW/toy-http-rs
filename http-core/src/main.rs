@@ -3,6 +3,7 @@ use std::net::SocketAddr;
 use std::collections::HashMap;
 
 use http_lib::http::{HttpMethod, HttpStatusCode};
+use http_lib::middleware::logger::LoggerMiddleware;
 use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpListener;
 use tokio::sync::broadcast;
@@ -39,7 +40,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let server = ServerBuilder::new()
         .bind(addr)
-        .route("/",HttpMethod::GET, hello_handler)
+        .route("/",HttpMethod::GET, hello_handler).accept(LoggerMiddleware)
         .build()?
         .run()
         .await?;

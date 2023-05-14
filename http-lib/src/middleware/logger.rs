@@ -7,6 +7,8 @@ use std::error::Error;
 use std::pin::Pin;
 use std::future::Future;
 
+
+#[derive(Debug, Clone)]
 pub struct LoggerMiddleware;
 
 impl Middleware for LoggerMiddleware {
@@ -14,11 +16,11 @@ impl Middleware for LoggerMiddleware {
     
     fn on_request<'a>(&self, request: Request) -> FutureRequest<'a> {
         // Log the incoming request
-        println!("Request: {:?}", request);
+        println!("Request HERE: {:?}", request);
         
         Box::pin(async move {
             // Modify the request or perform asynchronous operations
-            Ok(request.clone())
+            Ok(request)
             // Modify as per your implementation
         })
     }
@@ -28,7 +30,7 @@ impl Middleware for LoggerMiddleware {
         // Log the outgoing response
         println!("Response: {:?}", response);
         Box::pin(async move {
-            Ok(response.clone()) // Wrap response.clone() in Ok variant
+            Ok(response) // Wrap response.clone() in Ok variant
         })
     }
 }

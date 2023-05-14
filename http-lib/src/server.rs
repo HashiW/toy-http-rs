@@ -6,6 +6,8 @@ use crate::middleware::logger::LoggerMiddleware;
 use crate::http::*;
 
 
+use std::sync::Mutex;
+use std::sync::Arc;
 use std::cell::RefCell;
 use httparse;
 use serde::{Deserialize, Serialize};
@@ -20,17 +22,25 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::mpsc::{channel, Sender};
 
+use std::rc::Rc;
 
 pub type FutureResponse<'a> = Pin<Box<dyn Future<Output = Result<Response, HttpError>> + Send + 'a>>;
 
 pub type RouteHandler = fn(Request) -> FutureResponse<'static>;
 
 
-
+#[derive(Clone)]
 pub struct Server {
     address: SocketAddr,
     routes: HashMap<Route, RouteHandler>,
+    middleware: Arc<Vec<Box<dyn Middleware>>>,
+
 }
+
+
+
+
+
 #[derive(Eq, Hash, PartialEq,Clone)]
 struct Route {
     method: HttpMethod,
@@ -42,19 +52,19 @@ impl Server {
         let listener = TcpListener::bind(address).await?;
         println!("Server listening on {}", address.to_string());
 
+        
         loop {
             let (mut stream, _) = listener.accept().await?;
             let routes = self.routes.clone();
+            let middleware = Arc::clone(&self.middleware);
+           
             tokio::spawn(async move {
                 let mut buffer = [0; 1024];
                 let _ = stream.read(&mut buffer).await.unwrap();
 
                 let request = parse_request(&buffer).unwrap();
-
-            ;
-                let empty_middleware: &[Box<dyn Middleware>; 0] = &[];
-
-                let future_response = handle_route(request, &routes,empty_middleware).await;
+              
+                let future_response = handle_route(request, &routes, &middleware).await;
 
                 match future_response.await {
                     Ok(response) => {
@@ -128,7 +138,7 @@ fn parse_request(buffer: &[u8]) -> Result<Request, Box<dyn std::error::Error>> {
     })
 }
 
-async fn handle_route<'a>(request:Request, routes: &'a HashMap<Route, RouteHandler>, middleware: &'a [Box<dyn Middleware>],) -> FutureResponse<'a>{
+async fn handle_route<'a>(request:Request, routes: &'a HashMap<Route, RouteHandler>, middleware: &'a Vec<Box<dyn Middleware>>) -> FutureResponse<'a>{
     // Find the route handler based on the request path and call it
     if let Some(handler) = routes.get(&Route { method: request.method.clone(), path: request.uri.clone() }) {
         
@@ -136,7 +146,7 @@ async fn handle_route<'a>(request:Request, routes: &'a HashMap<Route, RouteHandl
 
         for mw in middleware {
              
-           mw.on_request(request.clone()).await;
+            mw.on_request(request.clone());
         
         }
 
@@ -157,6 +167,7 @@ async fn handle_route<'a>(request:Request, routes: &'a HashMap<Route, RouteHandl
 pub struct ServerBuilder {
     address: Option<SocketAddr>,
     routes: Option<HashMap<Route, RouteHandler>>,
+    middleware: Option<Arc<Vec<Box<dyn Middleware>>>>,
 }
 
 impl ServerBuilder {
@@ -164,6 +175,7 @@ impl ServerBuilder {
         Self {
             address: None,
             routes: Some(HashMap::new()),
+            middleware: Some(Arc::new(Vec::new()))
         }
     }
 
@@ -182,10 +194,26 @@ impl ServerBuilder {
         }
         self
     }
+    pub fn accept<M: Middleware + 'static>(mut self, middleware: M) -> Self {
+        if let Some(middleware_vec) = self.middleware.as_mut() {
+            Arc::get_mut(middleware_vec)
+                .expect("Cannot add middleware because there are other references to this Arc")
+                .push(Box::new(middleware));
+        } else {
+            self.middleware = Some(Arc::new(vec![Box::new(middleware)]));
+        }
+    
+        self
+    }
+    
 
+
+    // String should be error
     pub fn build(self) -> Result<Server, String> {
         let address = self.address.ok_or("Address not set")?;
         let routes = self.routes.ok_or("Routes Uninitalized")?;
-        Ok(Server { address, routes })
+
+        let middleware = self.middleware.ok_or("MIddleware Error").unwrap();
+        Ok(Server { address, routes,middleware })
     }
 }
